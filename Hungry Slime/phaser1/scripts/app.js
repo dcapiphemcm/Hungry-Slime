@@ -5,13 +5,17 @@ class MainMenu extends Phaser.Scene {
 
     preload() {
         this.load.image('menuBackground', '../phaser1/assets/image/slime.jpg');
+        this.load.audio('bgm', '../phaser1/assets/music/bgm.mp3');
     }
 
     create() {
-        // Background
+        if (!this.sound.get('bgm')) {
+            this.bgm = this.sound.add('bgm', { loop: true, volume: 0.5 });
+            this.bgm.play();
+        }
+
         this.add.image(960, 540, 'menuBackground').setDisplaySize(1920, 1080);
 
-        // Title
         this.add.text(960, 350, 'Hungry Slime', {
             fontSize: '96px',
             fill: '#ffffff',
@@ -19,37 +23,35 @@ class MainMenu extends Phaser.Scene {
             strokeThickness: 8
         }).setOrigin(0.5);
 
-        // Play Button
         this.add.text(960, 540, 'Play', {
             fontSize: '64px',
             fill: '#ffffff',
             stroke: '#000000',
             strokeThickness: 6
         }).setOrigin(0.5).setInteractive()
-          .on('pointerdown', () => this.scene.start('MainGame'))
-          .on('pointerover', function () { this.setStyle({ fill: '#ff0000' }); })
-          .on('pointerout', function () { this.setStyle({ fill: '#ffffff' }); });
+            .on('pointerdown', () => this.scene.start('MainGame'))
+            .on('pointerover', function () { this.setStyle({ fill: '#ff0000' }); })
+            .on('pointerout', function () { this.setStyle({ fill: '#ffffff' }); });
 
-        // Exit Button
         this.add.text(960, 640, 'Exit', {
             fontSize: '64px',
             fill: '#ffffff',
             stroke: '#000000',
             strokeThickness: 6
         }).setOrigin(0.5).setInteractive()
-          .on('pointerdown', () => {
-              this.add.text(960, 700, 'Exiting...', {
-                  fontSize: '48px',
-                  fill: '#ff0000'
-              }).setOrigin(0.5);
+            .on('pointerdown', () => {
+                this.add.text(960, 700, 'Exiting...', {
+                    fontSize: '48px',
+                    fill: '#ff0000'
+                }).setOrigin(0.5);
 
-              if (window.confirm("Are you sure you want to exit the game?")) {
-                  window.open('', '_self');
-                  window.close();
-              }
-          })
-          .on('pointerover', function () { this.setStyle({ fill: '#ff0000' }); })
-          .on('pointerout', function () { this.setStyle({ fill: '#ffffff' }); });
+                if (window.confirm("Are you sure you want to exit the game?")) {
+                    window.open('', '_self');
+                    window.close();
+                }
+            })
+            .on('pointerover', function () { this.setStyle({ fill: '#ff0000' }); })
+            .on('pointerout', function () { this.setStyle({ fill: '#ffffff' }); });
     }
 }
 
@@ -77,6 +79,11 @@ class MainGame extends Phaser.Scene {
         this.load.image("star", "../phaser1/assets/image/star.png");
         this.load.image("bomb", "../phaser1/assets/image/bomb.png");
         this.load.image("dude", "../phaser1/assets/image/dude.png");
+
+        // 🔊 Load sound effects
+        this.load.audio('coinSound', '../phaser1/assets/music/coin.mp3');
+        this.load.audio('loseSound', '../phaser1/assets/music/lose.mp3');
+        this.load.audio('winSound', '../phaser1/assets/music/win.mp3');
     }
 
     create() {
@@ -87,6 +94,11 @@ class MainGame extends Phaser.Scene {
         this.starsCollected = 0;
         this.totalStarsCollected = 0;
         this.stretchTime = 0;
+
+        // 🔊 Add sound objects
+        this.coinSound = this.sound.add('coinSound');
+        this.loseSound = this.sound.add('loseSound');
+        this.winSound = this.sound.add('winSound');
 
         this.backgroundImage = this.add.image(960, 540, 'sky');
 
@@ -130,10 +142,10 @@ class MainGame extends Phaser.Scene {
             strokeThickness: 6,
             align: 'center'
         }).setOrigin(0.5).setInteractive()
-          .on('pointerdown', () => this.restartGame())
-          .on('pointerover', () => this.restartButton.setStyle({ fill: '#ff0000' }))
-          .on('pointerout', () => this.restartButton.setStyle({ fill: '#ffffff' }))
-          .setVisible(false).setDepth(10);
+            .on('pointerdown', () => this.restartGame())
+            .on('pointerover', () => this.restartButton.setStyle({ fill: '#ff0000' }))
+            .on('pointerout', () => this.restartButton.setStyle({ fill: '#ffffff' }))
+            .setVisible(false).setDepth(10);
 
         this.backToMenuButton = this.add.text(960, 600, 'Back to Menu', {
             fontSize: '48px',
@@ -142,10 +154,10 @@ class MainGame extends Phaser.Scene {
             strokeThickness: 6,
             align: 'center'
         }).setOrigin(0.5).setInteractive()
-          .on('pointerdown', () => this.scene.start('MainMenu'))
-          .on('pointerover', () => this.backToMenuButton.setStyle({ fill: '#ff0000' }))
-          .on('pointerout', () => this.backToMenuButton.setStyle({ fill: '#ffffff' }))
-          .setVisible(false).setDepth(10);
+            .on('pointerdown', () => this.scene.start('MainMenu'))
+            .on('pointerover', () => this.backToMenuButton.setStyle({ fill: '#ff0000' }))
+            .on('pointerout', () => this.backToMenuButton.setStyle({ fill: '#ffffff' }))
+            .setVisible(false).setDepth(10);
 
         this.setupColliders();
     }
@@ -195,7 +207,7 @@ class MainGame extends Phaser.Scene {
 
                 if (Math.abs(bomb.body.velocity.x) < minVelX) {
                     let newVelX = bomb.body.velocity.x === 0 ? (Phaser.Math.Between(0, 1) === 0 ? -minVelX : minVelX)
-                                                             : (bomb.body.velocity.x > 0 ? minVelX : -minVelX);
+                        : (bomb.body.velocity.x > 0 ? minVelX : -minVelX);
                     bomb.setVelocityX(newVelX);
                 }
 
@@ -235,6 +247,7 @@ class MainGame extends Phaser.Scene {
         if (this.gameOver) return;
 
         star.disableBody(true, true);
+        this.coinSound.play();  // 🔊 Play coin sound
 
         this.score++;
         this.starsCollected++;
@@ -266,6 +279,7 @@ class MainGame extends Phaser.Scene {
         this.physics.pause();
         player.setTint(0xff0000);
         this.gameOver = true;
+        this.loseSound.play();  // 🔊 Play lose sound
         this.gameOverText.setVisible(true);
         this.restartButton.setVisible(true);
         this.backToMenuButton.setVisible(true);
@@ -326,27 +340,22 @@ class MainGame extends Phaser.Scene {
                 this.backgroundImage.setTexture('red');
                 this.createLevel3();
             } else {
-                // Level 3 complete: show win screen
                 this.physics.pause();
                 this.gameOver = true;
                 this.bombActive = false;
 
                 this.scoreText.setText('You win! Total Apples: ' + this.totalStarsCollected);
+                this.winSound.play();  // 🔊 Play win sound
                 this.winText.setVisible(true);
 
-                // Show only the "Back to Menu" button, hide Restart button
                 this.restartButton.setVisible(false);
                 this.backToMenuButton.setVisible(true);
-
-                // Fade in win screen for smoothness
                 this.cameras.main.fadeIn(1000, 0, 0, 0);
-
                 return;
             }
 
             this.spawnStars();
             this.setupColliders();
-
             this.cameras.main.fadeIn(1000, 0, 0, 0);
         });
     }
